@@ -1,12 +1,30 @@
 import redis
+import configparser
 
-r = redis.Redis(
-    host='redis-13601.c276.us-east-1-2.ec2.redns.redis-cloud.com',
-    port=13601,
-    decode_responses=True,
-    username="default",
-    password="7U3INXqHnApSpEQUVe6p50Z8evJhuwKa",
-)
+class App:
+    __instance = None
+
+    def setup(self):
+        config = configparser.ConfigParser()
+        config.read("config.cfg")
+
+        # Setup Redis connection using config file
+        self.dbconn = redis.Redis(
+            host=config["Database"]["host"],
+            port=int(config["Database"]["port"]),
+            username=config["Database"]["username"],
+            password=config["Database"]["password"],
+            decode_responses=True
+        )
+
+    def __new__(cls):
+        if cls.__instance is None:
+            cls.__instance = super(App, cls).__new__(cls)
+            cls.__instance.setup()
+        return cls.__instance
+
+app = App()
+r = app.dbconn
 
 def save_stock_to_redis(stock_data):
     """Save stock data (dict) to Redis Cloud."""
