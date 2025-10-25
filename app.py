@@ -18,6 +18,19 @@ def save_stock_to_redis(stock_data):
     r.hset(redis_key, mapping=stock_data)
     print(f"Saved stock data for {ticker} to Redis under key '{redis_key}'.")
 
+def get_stock_from_redis(ticker):
+    """Retrieve stored stock data from Redis Cloud."""
+    redis_key = f"stock:{ticker}"
+    if not r.exists(redis_key):
+        print(f"No data found in Redis for key '{redis_key}'.")
+        return {}
+
+    data = r.hgetall(redis_key)
+    print(f"\nRetrieved data for {ticker} from Redis:")
+    for k, v in data.items():
+        print(f"  {k}: {v}")
+    return data
+
 if __name__ == "__main__":
     sample_stock = {
         "ticker": "DEMO",
@@ -33,3 +46,4 @@ if __name__ == "__main__":
     }
 
     save_stock_to_redis(sample_stock)
+    get_stock_from_redis("DEMO")
