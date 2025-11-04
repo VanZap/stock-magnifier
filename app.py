@@ -9,6 +9,9 @@ class App:
         config = configparser.ConfigParser()
         config.read("config.cfg")
 
+        # Setup Alpha Vantage Stocks API
+        self.api_key = config["StocksAPI"]["apikey"].strip()
+
         # Setup Redis connection using config file
         self.dbconn = redis.Redis(
             host=config["Database"]["host"],
@@ -26,10 +29,11 @@ class App:
 
 app = App()
 r = app.dbconn
+API_KEY = app.api_key
 
 # Fetch stock data from Alpha Vantage and print results
 def fetch_stock_from_alpha_vantage(symbol):
-    url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={"5UQVH0RMS3OMF27A"}"
+    url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={API_KEY}"
     response = requests.get(url).json()
     quote = response.get("Global Quote", {})
 
@@ -89,7 +93,7 @@ def get_stock_from_redis_via_api(symbol):
 
 
 if __name__ == "__main__":
-    symbol = "MSFT"
+    symbol = "TSLA"
 
     save_stock_from_alpha_to_redis(symbol)
     get_stock_from_redis_via_api(symbol)
