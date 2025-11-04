@@ -1,5 +1,6 @@
 import redis
 import configparser
+import requests
 
 class App:
     __instance = None
@@ -26,42 +27,69 @@ class App:
 app = App()
 r = app.dbconn
 
-def save_stock_to_redis(stock_data):
-    """Save stock data (dict) to Redis Cloud."""
-    ticker = stock_data.get("ticker")
-    if not ticker:
-        raise ValueError("stock_data must include a 'ticker' key")
+# Fetch stock data from Alpha Vantage and print results
+def fetch_stock_from_alpha_vantage(symbol):
+    url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={"5UQVH0RMS3OMF27A"}"
+    response = requests.get(url).json()
+    quote = response.get("Global Quote", {})
 
-    redis_key = f"stock:{ticker}"
-    r.hset(redis_key, mapping=stock_data)
-    print(f"Saved stock data for {ticker} to Redis under key '{redis_key}'.")
+    if not quote:
+        print(f"No data found for symbol: {symbol}")
+        return {}
 
-def get_stock_from_redis(ticker):
-    """Retrieve stored stock data from Redis Cloud."""
-    redis_key = f"stock:{ticker}"
+    print(f"\nStock Data for {symbol}:")
+    print(f"  Open: {quote.get('02. open')}")
+    print(f"  High: {quote.get('03. high')}")
+    print(f"  Low: {quote.get('04. low')}")
+    print(f"  Price: {quote.get('05. price')}")
+    print(f"  Volume: {quote.get('06. volume')}")
+    print(f"  Latest Trading Day: {quote.get('07. latest trading day')}")
+    print(f"  Previous Close: {quote.get('08. previous close')}")
+    print(f"  Change: {quote.get('09. change')}")
+    print(f"  Change Percent: {quote.get('10. change percent')}\n")
+
+    return quote
+
+# Fetch stock data from Alpha Vantage and save it to Redis Cloud
+def save_stock_from_alpha_to_redis(symbol):
+    quote = fetch_stock_from_alpha_vantage(symbol)
+    if not quote:
+        return
+
+    data = {
+        "ticker": quote.get("01. symbol"),
+        "open": quote.get("02. open"),
+        "high": quote.get("03. high"),
+        "low": quote.get("04. low"),
+        "price": quote.get("05. price"),
+        "volume": quote.get("06. volume"),
+        "latestTradingDay": quote.get("07. latest trading day"),
+        "previousClose": quote.get("08. previous close"),
+        "change": quote.get("09. change"),
+        "changePercent": quote.get("10. change percent")
+    }
+
+    redis_key = f"stock:{data['ticker']}"
+    r.hset(redis_key, mapping=data)
+    print(f"Saved API stock data for {symbol} to Redis under key '{redis_key}'.")
+
+
+def get_stock_from_redis_via_api(symbol):
+    """Retrieve the stock data previously saved to Redis Cloud."""
+    redis_key = f"stock:{symbol}"
     if not r.exists(redis_key):
         print(f"No data found in Redis for key '{redis_key}'.")
         return {}
 
     data = r.hgetall(redis_key)
-    print(f"\nRetrieved data for {ticker} from Redis:")
+    print(f"\nRetrieved {symbol} data from Redis:")
     for k, v in data.items():
         print(f"  {k}: {v}")
     return data
 
-if __name__ == "__main__":
-    sample_stock = {
-        "ticker": "DEMO",
-        "open": "100.00",
-        "high": "105.00",
-        "low": "98.00",
-        "price": "104.50",
-        "volume": "150000",
-        "latestTradingDay": "2025-10-24",
-        "previousClose": "101.25",
-        "change": "3.25",
-        "changePercent": "3.21%"
-    }
 
-    save_stock_to_redis(sample_stock)
-    get_stock_from_redis("DEMO")
+if __name__ == "__main__":
+    symbol = "MSFT"
+
+    save_stock_from_alpha_to_redis(symbol)
+    get_stock_from_redis_via_api(symbol)
