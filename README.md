@@ -8,6 +8,9 @@ The **Stock Magnifier App** is a lightweight, modular tool for fetching, storing
 
 * Fetch stock quotes from **AlphaVantage API**
 * Store and retrieve stock data from **Redis Cloud**
+* Add to ticker to favorites
+* Display and sort favorites
+* Delete ticker from favorites
 
 ---
 
@@ -63,6 +66,9 @@ Using `cli_options.py`, users can:
 
 * Fetch a stock
 * Add to favorites
+* Display favorites
+* Sort favorites
+* Delete ticker
 
 All CLI commands route through `main.py`.
 
