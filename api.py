@@ -33,8 +33,11 @@ class AlphaVantageFetcher:
 class RateLimitProxy:
     def __init__(self, real_fetcher, min_interval=12.0):
         self._real = real_fetcher
+        # add minimum delay between requests
         self._min_interval = float(min_interval)
+        # track last request time for rate limiting
         self._last_call = 0.0
+        # cache results to avoid repeated API calls
         self._cache = {}
 
     # Fetch with caching and enforced delay.
@@ -44,6 +47,7 @@ class RateLimitProxy:
 
         now = time.time()
         elapsed = now - self._last_call
+        # enforce minimum interval between API calls
         if elapsed < self._min_interval:
             wait_for = self._min_interval - elapsed
             print(f"[Proxy] Waiting {wait_for:.1f}s due to rate limit...")

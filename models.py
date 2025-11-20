@@ -1,5 +1,5 @@
 class Stock:
-    # Normalized stock object
+    # Normalized stock object with all quote attributes
     def __init__(self, ticker, open=None, high=None, low=None, price=None,
                  volume=None, latestTradingDay=None, previousClose=None, change=None, changePercent=None):
         self.ticker = ticker
@@ -13,6 +13,7 @@ class Stock:
         self.change = change
         self.changePercent = changePercent
 
+    # Convert Stock object to dictionary format for Redis storage
     def to_dict_for_redis(self):
         return {
             "ticker": self.ticker,

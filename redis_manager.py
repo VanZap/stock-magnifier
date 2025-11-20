@@ -6,7 +6,8 @@ class RedisManager:
 
     def __init__(self):
         pass
-
+    
+    # Saves stock quote data to Redis hash
     def save_stock(self, quote):
         if not quote:
             return None
@@ -35,6 +36,7 @@ class RedisManager:
         notifier.notify("stock_saved", {"ticker": ticker, "key": redis_key, "data": data})
         return redis_key
 
+    # Adds ticker to favorites set
     def add_favorite(self, ticker):
         try:
             r.sadd(self.FAVORITES_KEY, ticker)
@@ -42,6 +44,7 @@ class RedisManager:
         except Exception as e:
             print("[ERROR] Could not add favorite:", e)
 
+    # Retrieves stock data from Redis
     def get_stock(self, ticker):
         redis_key = f"stock:{ticker}"
         try:
@@ -52,6 +55,7 @@ class RedisManager:
             print("[ERROR] Redis read failed:", e)
             return None
     
+    # Get all favorited tickers, sorted alphabetically
     def list_favorites(self):
         try:
             members = r.smembers(self.FAVORITES_KEY) or set()
@@ -60,6 +64,7 @@ class RedisManager:
             print("[ERROR] Could not list favorites:", e)
             return []
     
+    # Remove ticker from favorites
     def remove_favorite(self, ticker):
         try:
             removed = r.srem(self.FAVORITES_KEY, ticker)

@@ -9,20 +9,26 @@ class CLIOptions:
         self.proxy_fetcher = proxy_fetcher
         self.redis_mgr = RedisManager()
 
+    # Search and fetch a stock quote by ticker symbol
     def search_quote(self):
         symbol = input("Enter ticker symbol (e.g., TSLA): ").strip().upper()
         if not symbol:
             print("No symbol entered.")
             return
+        
+        # Fetch with rate limiting via proxy
         raw = self.proxy_fetcher.fetch(symbol)
         if not raw:
             print("No quote returned.")
             return
+        
+        # Save to Redis and optionally add to favorites
         self.redis_mgr.save_stock(raw)
         stock_obj = AlphaVantageAdapter.from_api(raw)
         if input("Add to favorites? (y/N): ").strip().lower() == "y":
             self.redis_mgr.add_favorite(stock_obj.ticker)
     
+    # Display favorites with optional sorting and deletion
     def display_favorites(self):
         favorites = self.redis_mgr.list_favorites()
         if not favorites:
@@ -34,7 +40,9 @@ class CLIOptions:
         print("  2) Price (descending)")
         choice = input("Choose sort (1/2, default 1): ").strip() or "1"
 
+        # Fetch full data for each favorite
         fav_with_data = [(t, self.redis_mgr.get_stock(t)) for t in favorites]
+        # Sort by price/ ticker
         if choice == "2":
             fav_with_data.sort(key=lambda x: float(x[1].get("price") or 0) if x[1] else 0, reverse=True)
         else:
@@ -45,12 +53,14 @@ class CLIOptions:
             price = data.get("price") if data else "N/A"
             print(f"{idx}. {t} | Price: {price}")
 
+        # User to delete a favorite
         delete = input("\nWould you like to delete a ticker from the list?\nEnter the number of ticker or press Enter to escape: ").strip()
         if delete.isdigit():
             i = int(delete) - 1
             if 0 <= i < len(fav_with_data):
                 self.redis_mgr.remove_favorite(fav_with_data[i][0])
     
+    # Generate CSV or TXT report of favorite stocks
     def generate_report(self, report_folder="reports"):
         favorites = self.redis_mgr.list_favorites()
         if not favorites:

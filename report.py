@@ -2,14 +2,19 @@ import csv
 import os
 from models import Stock
 
-# Handler report generation
+# Handles report generation
 class StockReportBuilder:
     def __init__(self):
+        # for text report parts
         self.parts = []
+
+        # for CSV rows
         self.rows = []
+        # CSV header columns
         self.headers = ["ticker","price","open","high","low","volume",
                         "latestTradingDay","previousClose","change","changePercent"]
 
+    # Clear previous build state
     def reset(self):
         self.parts.clear()
         self.rows.clear()
