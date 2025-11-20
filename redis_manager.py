@@ -1,11 +1,11 @@
 from app import r
-from events import Notifier
+from events import notifier
 
 class RedisManager:
     FAVORITES_KEY = "favorites"
 
     def __init__(self):
-        self.notifier = Notifier()
+        pass
 
     def save_stock(self, quote):
         if not quote:
@@ -32,12 +32,13 @@ class RedisManager:
         except Exception as e:
             print("[ERROR] Redis save failed:", e)
             return None
+        notifier.notify("stock_saved", {"ticker": ticker, "key": redis_key, "data": data})
         return redis_key
 
     def add_favorite(self, ticker):
         try:
             r.sadd(self.FAVORITES_KEY, ticker)
-            print(f"Successfuly added {ticker} to favorites!")
+            notifier.notify("favorite_added", {"ticker": ticker})
         except Exception as e:
             print("[ERROR] Could not add favorite:", e)
 
@@ -63,7 +64,7 @@ class RedisManager:
         try:
             removed = r.srem(self.FAVORITES_KEY, ticker)
             if removed:
-                print(f"[Favorites] {ticker} successfully deleted!")
+                notifier.notify("favorite_removed", {"ticker": ticker})
             else:
                 print(f"[Favorites] {ticker} not found on list.")
         except Exception as e:
