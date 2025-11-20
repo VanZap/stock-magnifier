@@ -1,5 +1,7 @@
-from models import AlphaVantageAdapter
+from models import AlphaVantageAdapter, Stock
 from redis_manager import RedisManager
+from report import StockReportBuilder
+import os, csv
 
 # Handles user interaction and CLI options
 class CLIOptions:
@@ -48,3 +50,39 @@ class CLIOptions:
             i = int(delete) - 1
             if 0 <= i < len(fav_with_data):
                 self.redis_mgr.remove_favorite(fav_with_data[i][0])
+    
+    def generate_report(self, report_folder="reports"):
+        favorites = self.redis_mgr.list_favorites()
+        if not favorites:
+            print("No favorites to report.")
+            return
+
+        os.makedirs(report_folder, exist_ok=True)
+        choice = input("Generate report as .csv or .txt format? (C/T, default C): ").strip().lower() or "c"
+        is_csv = choice == "c"
+        builder = StockReportBuilder().reset()
+
+        for t in favorites:
+            data = self.redis_mgr.get_stock(t)
+            if not data:
+                continue
+            stock_obj = Stock(**data)
+            if is_csv:
+                builder.add_row_for_csv(stock_obj)
+            else:
+                builder.add_header(stock_obj).add_price_section(stock_obj).add_volume_section(stock_obj).add_change_section(stock_obj).add_footer(stock_obj)
+
+        filename = os.path.join(report_folder, f"favorites_report.{ 'csv' if is_csv else 'txt' }")
+        try:
+            if is_csv:
+                headers, rows = builder.build_csv()
+                with open(filename, "w", newline="") as f:
+                    writer = csv.writer(f)
+                    writer.writerow(headers)
+                    writer.writerows(rows)
+            else:
+                with open(filename, "w", encoding="utf-8") as f:
+                    f.write(builder.build())
+            print(f"[Report] Saved to {filename}")
+        except Exception as e:
+            print("[ERROR] Could not write report:", e)

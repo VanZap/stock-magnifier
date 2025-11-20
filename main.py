@@ -11,13 +11,16 @@ def main_loop():
         print("\nSelect an option:")
         print("  1: Search Quote")
         print("  2: Display Favorites")
+        print("  3: Generate Report")
         print("  0: Exit")
 
-        choice = input("Enter choice: ").strip()
+        choice = input("\nEnter choice: ").strip()
         if choice == "1":
             cli.search_quote()
         elif choice == "2":
             cli.display_favorites()
+        elif choice == "3":
+            cli.generate_report()
         elif choice == "0":
             print("Exited the app. Have a good day!")
             break
